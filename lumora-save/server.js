@@ -229,7 +229,7 @@ async function handleDownload(reqUrl, res) {
   }
 }
 
-const server = http.createServer(async (req, res) => {
+ module.exports = (async (req, res) => {
   const reqUrl = new URL(req.url, 'http://localhost');
   try {
     if (req.method === 'GET' && reqUrl.pathname === '/') {
@@ -245,6 +245,6 @@ const server = http.createServer(async (req, res) => {
     if (res.headersSent) return res.destroy();
     sendJson(res, e.status || 500, { error: e instanceof UserError ? e.message : 'Something went wrong. Try again.' });
   }
-});
+//});
 
-server.listen(PORT, HOST, () => console.log(`Lumora Save is running: http://localhost:${PORT}`));
+//server.listen(PORT, HOST, () => console.log(`Lumora Save is running: http://localhost:${PORT}`));
