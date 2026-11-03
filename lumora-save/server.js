@@ -236,7 +236,7 @@ async function handleDownload(reqUrl, res) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return fs.createReadStream(PAGE).pipe(res);
     }
-    if (req.method === 'POST' && reqUrl.pathname === '/api/info') return await handleInfo(req, res);
+    if ((req.method === 'POST' || req.method === 'GET') && reqUrl.pathname === '/api/info') return await handleInfo(req, res);
     if (req.method === 'GET' && reqUrl.pathname === '/api/download') return await handleDownload(reqUrl, res);
     sendJson(res, 404, { error: 'Not found.' });
   } catch (e) {
