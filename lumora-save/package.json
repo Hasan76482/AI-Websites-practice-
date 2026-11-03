@@ -1,0 +1,14 @@
+{
+  "name": "lumora-save",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local server for the Lumora Save video downloader. Uses yt-dlp, no API keys needed.",
+  "scripts": {
+    "postinstall": "node scripts/setup.js",
+    "update-downloader": "node scripts/setup.js --force",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
+  }
+}
