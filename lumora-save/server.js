@@ -11,7 +11,7 @@ const ffmpeg = require('ffmpeg-static');
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '127.0.0.1';
 const YTDLP = path.join(__dirname, 'bin', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
-const PAGE = path.join(__dirname, 'public', 'index.html');
+const PAGE = path.join(__dirname,'index.html');
 const INFO_TIMEOUT = 90e3;
 const DOWNLOAD_TIMEOUT = 15 * 60e3;
 const MAX_DOWNLOADS = 3;
