@@ -17,7 +17,7 @@ const DOWNLOAD_TIMEOUT = 15 * 60e3;
 const MAX_DOWNLOADS = 3;
 const TRANSIENT = /unable to extract universal data|tls connect error/i;
 const ALLOWED = ['instagram.com', 'instagr.am', 'youtube.com', 'youtu.be', 'tiktok.com', 'facebook.com', 'fb.watch', 'fb.com', 'linkedin.com', 'lnkd.in', 'snapchat.com'];
-const BASE_ARGS = ['--ignore-config', '--no-plugin-dirs', '--no-playlist', '--no-warnings', '--socket-timeout', '30', '--js-runtimes', `node:${process.execPath}`, '--ffmpeg-location', ffmpeg];
+const BASE_ARGS = ['--ignore-config', '--no-plugin-dirs', '--no-playlist', '--no-warnings', '--socket-timeout', '30', '--js-runtimes', node:${process.execPath}, '--ffmpeg-location', ffmpeg];
 
 let active = 0;
 
@@ -52,7 +52,7 @@ function friendlyError(stderr) {
   return new UserError('Couldn’t fetch this video. Check the link, or try again in a moment.', 502);
 }
 
-// Runs yt-dlp without a shell. The caller aborts through `signal` when the client disconnects.
+// Runs yt-dlp without a shell. The caller aborts through signal when the client disconnects.
 function run(args, timeout, signal) {
   return new Promise((resolve, reject) => {
     const p = spawn(YTDLP, [...BASE_ARGS, ...args], { windowsHide: true, timeout, signal });
@@ -94,15 +94,15 @@ async function snapchatInfo(url, signal) {
   if (!r.ok) throw new UserError('This video is unavailable. It may have been deleted.', 422);
   const html = await r.text();
   const field = name => {
-    const m = html.match(new RegExp(`"${name}":"((?:[^"\\\\]|\\\\.)*)"`));
-    return m ? JSON.parse(`"${m[1]}"`) : '';
+    const m = html.match(new RegExp("${name}":"((?:[^"\\\\]|\\\\.)*)"));
+    return m ? JSON.parse("${m[1]}") : '';
   };
   const media = field('contentUrl');
   if (!media || !/(^|\.)sc-cdn\.net$/i.test(new URL(media).hostname)) throw new UserError('No downloadable video was found at that link.', 422);
   const seconds = field('duration').match(/^PT(?:(\d+)M)?(\d+)S$/);
   return {
     media,
-    title: field('alternateName') ? `Snapchat video by ${field('alternateName')}` : 'Snapchat video',
+    title: field('alternateName') ? Snapchat video by ${field('alternateName')} : 'Snapchat video',
     thumbnail: field('thumbnailUrl'),
     uploader: field('alternateName'),
     duration: seconds ? (+seconds[1] || 0) * 60 + +seconds[2] : 0,
@@ -112,14 +112,14 @@ async function snapchatInfo(url, signal) {
 async function saveSnapchat(url, q, dir, signal) {
   const info = await snapchatInfo(url, signal);
   const base = info.title.replace(/[^\w @.-]/g, '_');
-  const video = path.join(dir, `${base}.mp4`);
+  const video = path.join(dir, ${base}.mp4);
   const r = await fetch(info.media, { signal });
   if (!r.ok) throw new UserError('Couldn’t fetch this video. Try again in a moment.', 502);
   await pipeline(Readable.fromWeb(r.body), fs.createWriteStream(video));
   if (q !== 'audio') return;
 
   await new Promise((resolve, reject) => {
-    const p = spawn(ffmpeg, ['-y', '-i', video, '-vn', '-q:a', '0', path.join(dir, `${base}.mp3`)], { windowsHide: true, stdio: 'ignore', signal });
+    const p = spawn(ffmpeg, ['-y', '-i', video, '-vn', '-q:a', '0', path.join(dir, ${base}.mp3)], { windowsHide: true, stdio: 'ignore', signal });
     p.on('error', reject);
     p.on('close', code => (code === 0 ? resolve() : reject(new UserError('This video has no audio to extract.', 422))));
   });
@@ -134,7 +134,7 @@ function buildOptions(formats = []) {
     const size = f.width ? Math.min(f.width, f.height) : f.height;
     if (size >= 144) sizes.add(size);
   }
-  const options = [...sizes].sort((a, b) => b - a).slice(0, 6).map(s => ({ label: `${s}p`, q: String(s) }));
+  const options = [...sizes].sort((a, b) => b - a).slice(0, 6).map(s => ({ label: ${s}p, q: String(s) }));
   if (!options.length) options.push({ label: 'Best quality', q: 'best' });
   options.push({ label: 'Audio only (MP3)', q: 'audio' });
   return options;
@@ -143,8 +143,8 @@ function buildOptions(formats = []) {
 function downloadArgs(q) {
   if (q === 'audio') return ['-f', 'ba/b', '-x', '--audio-format', 'mp3', '--audio-quality', '0'];
   if (q !== 'best' && !/^\d{3,4}$/.test(q)) throw new UserError('Unknown quality option.');
-  const res = q === 'best' ? 'res' : `res:${q}`;
-  return ['-f', 'bv*+ba/b', '-S', `${res},vcodec:h264,acodec:m4a`, '--merge-output-format', 'mp4'];
+  const res = q === 'best' ? 'res' : res:${q};
+  return ['-f', 'bv*+ba/b', '-S', ${res},vcodec:h264,acodec:m4a, '--merge-output-format', 'mp4'];
 }
 
 function sendJson(res, status, body) {
@@ -170,15 +170,24 @@ function abortOnDisconnect(res) {
   return ctrl.signal;
 }
 
-async function handleInfo(req, res) {
-  if (!/application\/json/i.test(req.headers['content-type'] || '')) throw new UserError('Expected JSON.', 415);
-  let body;
-  try {
-    body = JSON.parse(await readBody(req));
-  } catch (e) {
-    throw e instanceof UserError ? e : new UserError('Invalid request.');
+async function handleInfo(req, res, reqUrl) {
+  let videoUrl = '';
+  if (req.method === 'POST') {
+    if (!/application\/json/i.test(req.headers['content-type'] || '')) throw new UserError('Expected JSON.', 415);
+    try {
+      const body = JSON.parse(await readBody(req));
+      videoUrl = body.url;
+    } catch (e) {
+      throw e instanceof UserError ? e : new UserError('Invalid request.');
+    }
+  } else {
+    videoUrl = reqUrl.searchParams.get('url');
+    if (!videoUrl) {
+      return sendJson(res, 200, { message: 'Pass a ?url= parameter or use POST to fetch video info.' });
+    }
   }
-  const url = checkUrl(body.url);
+
+  const url = checkUrl(videoUrl);
   const signal = abortOnDisconnect(res);
   if (isSnapchat(url)) {
     const { media, ...info } = await snapchatInfo(url, signal);
@@ -215,7 +224,7 @@ async function handleDownload(reqUrl, res) {
     res.writeHead(200, {
       'Content-Type': 'application/octet-stream',
       'Content-Length': size,
-      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
+      'Content-Disposition': attachment; filename*=UTF-8''${encodeURIComponent(name)},
     });
     await new Promise(resolve => {
       const stream = fs.createReadStream(path.join(dir, name));
@@ -229,14 +238,14 @@ async function handleDownload(reqUrl, res) {
   }
 }
 
- module.exports = (async (req, res) => {
+module.exports = async (req, res) => {
   const reqUrl = new URL(req.url, 'http://localhost');
   try {
     if (req.method === 'GET' && reqUrl.pathname === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return fs.createReadStream(PAGE).pipe(res);
     }
-    if ((req.method === 'POST' || req.method === 'GET') && reqUrl.pathname === '/api/info') return await handleInfo(req, res);
+    if ((req.method === 'POST' || req.method === 'GET') && reqUrl.pathname === '/api/info') return await handleInfo(req, res, reqUrl);
     if (req.method === 'GET' && reqUrl.pathname === '/api/download') return await handleDownload(reqUrl, res);
     sendJson(res, 404, { error: 'Not found.' });
   } catch (e) {
@@ -245,6 +254,4 @@ async function handleDownload(reqUrl, res) {
     if (res.headersSent) return res.destroy();
     sendJson(res, e.status || 500, { error: e instanceof UserError ? e.message : 'Something went wrong. Try again.' });
   }
-});
-
-//server.listen(PORT, HOST, () => console.log(`Lumora Save is running: http://localhost:${PORT}`);
+};
