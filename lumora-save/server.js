@@ -11,7 +11,7 @@ const ffmpeg = require('ffmpeg-static');
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '127.0.0.1';
 const YTDLP = path.join(__dirname, 'bin', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
-const PAGE = path.join(__dirname,'index.html');
+const PAGE = path.join(__dirname, 'index.html');
 const INFO_TIMEOUT = 90e3;
 const DOWNLOAD_TIMEOUT = 15 * 60e3;
 const MAX_DOWNLOADS = 3;
@@ -52,7 +52,6 @@ function friendlyError(stderr) {
   return new UserError('Couldn’t fetch this video. Check the link, or try again in a moment.', 502);
 }
 
-// Runs yt-dlp without a shell. The caller aborts through signal when the client disconnects.
 function run(args, timeout, signal) {
   return new Promise((resolve, reject) => {
     const p = spawn(YTDLP, [...BASE_ARGS, ...args], { windowsHide: true, timeout, signal });
@@ -61,7 +60,7 @@ function run(args, timeout, signal) {
     p.stdout.on('data', d => out.push(d));
     p.stderr.on('data', d => { err = (err + d).slice(-8000); });
     p.on('error', e => {
-      if (e.code === 'ENOENT') return reject(new UserError('The downloader isn’t installed. Run "npm install" and restart.', 500));
+      if (e.code === 'ENOENT') return reject(new UserError('The downloader isn’t installed.', 500));
       reject(e.name === 'AbortError' ? e : new UserError('The request took too long. Try again.', 504));
     });
     p.on('close', code => {
@@ -72,7 +71,6 @@ function run(args, timeout, signal) {
   });
 }
 
-// TikTok intermittently serves a page without its data or drops the connection, and the same link works moments later.
 async function runWithRetry(args, timeout, signal) {
   for (let attempt = 1; ; attempt++) {
     try {
@@ -88,7 +86,6 @@ function isSnapchat(url) {
   return /(^|\.)snapchat\.com$/i.test(new URL(url).hostname);
 }
 
-// yt-dlp can't parse Snapchat's current pages, but they publish the video in their public metadata.
 async function snapchatInfo(url, signal) {
   const r = await fetch(url, { signal, headers: { 'User-Agent': 'Mozilla/5.0' } });
   if (!r.ok) throw new UserError('This video is unavailable. It may have been deleted.', 422);
@@ -127,7 +124,6 @@ async function saveSnapchat(url, q, dir, signal) {
 }
 
 function buildOptions(formats = []) {
-  // Portrait reels report 1080x1920, so the shorter side is the "1080p" people expect.
   const sizes = new Set();
   for (const f of formats) {
     if (f.vcodec === 'none' || !f.height) continue;
