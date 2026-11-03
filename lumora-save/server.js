@@ -245,6 +245,6 @@ async function handleDownload(reqUrl, res) {
     if (res.headersSent) return res.destroy();
     sendJson(res, e.status || 500, { error: e instanceof UserError ? e.message : 'Something went wrong. Try again.' });
   }
-//});
+});
 
-//server.listen(PORT, HOST, () => console.log(`Lumora Save is running: http://localhost:${PORT}`));
+//server.listen(PORT, HOST, () => console.log(`Lumora Save is running: http://localhost:${PORT}`);
